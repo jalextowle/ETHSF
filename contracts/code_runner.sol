@@ -143,7 +143,7 @@ contract Runner {
         stack_ptr := add(stack_ptr, 0x20)
         jump(LOOP)
       $NOT:
-        stack_ptr := safe(stack_ptr, 0x20, stack_start)
+        stack_ptr := safe_sub(stack_ptr, 0x20, stack_start)
         mstore(stack_ptr, not(mload(stack_ptr)))
         stack_ptr := add(stack_ptr, 0x20)
         jump(LOOP)
@@ -162,8 +162,9 @@ contract Runner {
         stack_ptr := safe_add(stack_ptr, 0x20, mem_ptr)
         jump(LOOP)
       $BALANCE:
-        mstore(stack_ptr, balance)
-        stack_ptr := safe_add(stack_ptr, 0x20, mem_ptr)
+        stack_ptr := safe_sub(stack_ptr, 0x20, stack_start)
+        mstore(stack_ptr, balance(mload(stack_ptr)))
+        stack_ptr := add(stack_ptr, 0x20)
         jump(LOOP)
       $ORIGIN:
         mstore(stack_ptr, origin)
@@ -174,7 +175,7 @@ contract Runner {
         stack_ptr := safe_add(stack_ptr, 0x20, mem_ptr)
         jump(LOOP)
       $CALLVALUE:
-        mstore(stack_ptr, origin)
+        mstore(stack_ptr, callvalue)
         stack_ptr := safe_add(stack_ptr, 0x20, mem_ptr)
         jump(LOOP)
       $CALLDATALOAD:
@@ -187,7 +188,7 @@ contract Runner {
         )
         jump(LOOP)
       $CALLDATASIZE:
-        mstore(stack_ptr, origin)
+        mstore(stack_ptr, mload(_data))
         stack_ptr := safe_add(stack_ptr, 0x20, mem_ptr)
         jump(LOOP)
       $CALLDATACOPY:
@@ -237,7 +238,7 @@ contract Runner {
         stack_ptr := safe_sub(stack_ptr, 0x80, stack_start)
         extcodecopy( 
           mload(add(stack_ptr, 0x60)), 
-          add(mload(add(stack_ptr, 0x40), mem_ptr), 
+          add(mload(add(stack_ptr, 0x40)), mem_ptr), 
           mload(add(stack_ptr, 0x20)),
           mload(stack_ptr)
         )
@@ -336,35 +337,40 @@ contract Runner {
       $JUMPDEST:
         jump(LOOP)
       $PUSH:
+
         jump(LOOP)
       $DUP:
         jump(LOOP)
       $SWAP:
         jump(LOOP)
       $LOG0:
-        stack_ptr := safe_sub(stack_ptr, 0x20, stack_start)
+        stack_ptr := safe_sub(stack_ptr, 0x40, stack_start)
         log0(
+           mload(add(stack_ptr, 0x20)),
            mload(stack_ptr)
         )
         jump(LOOP)
       $LOG1:
-        stack_ptr := safe_sub(stack_ptr, 0x40, stack_start)
+        stack_ptr := safe_sub(stack_ptr, 0x60, stack_start)
         log1(
+           mload(add(stack_ptr, 0x40)),
            mload(add(stack_ptr, 0x20)),
            mload(stack_ptr)
         )
         jump(LOOP)
       $LOG2:
-        stack_ptr := safe_sub(stack_ptr, 0x60, stack_start)
+        stack_ptr := safe_sub(stack_ptr, 0x80, stack_start)
         log2(
+           mload(add(stack_ptr, 0x60)),
            mload(add(stack_ptr, 0x40)),
            mload(add(stack_ptr, 0x20)),
            mload(stack_ptr)
         )
         jump(LOOP)
       $LOG3:
-        stack_ptr := safe_sub(stack_ptr, 0x80, stack_start)
+        stack_ptr := safe_sub(stack_ptr, 0xa0, stack_start)
         log3(
+           mload(add(stack_ptr, 0x80)),
            mload(add(stack_ptr, 0x60)),
            mload(add(stack_ptr, 0x40)),
            mload(add(stack_ptr, 0x20)),
@@ -372,8 +378,9 @@ contract Runner {
         )
         jump(LOOP)
       $LOG4:
-        stack_ptr := safe_sub(stack_ptr, 0xa0, stack_start)
+        stack_ptr := safe_sub(stack_ptr, 0xc0, stack_start)
         log4(
+           mload(add(stack_ptr, 0xa0)),
            mload(add(stack_ptr, 0x80)),
            mload(add(stack_ptr, 0x60)),
            mload(add(stack_ptr, 0x40)),
@@ -408,9 +415,10 @@ contract Runner {
         stack_ptr := add(stack_ptr, 0x20)
         jump(LOOP)
       $CALLCODE:
-        stack_ptr := safe_sub(stack_ptr, 0xc0, stack_start)
+        stack_ptr := safe_sub(stack_ptr, 0xe0, stack_start)
         mstore(stack_ptr, 
                callcode(
+                 mload(add(stack_ptr, 0xc0)),
                  mload(add(stack_ptr, 0xa0)), 
                  mload(add(stack_ptr, 0x80)),
                  mload(add(stack_ptr, 0x60)),
@@ -534,15 +542,15 @@ contract Runner {
         mstore(0x114, $MSIZE)
         mstore(0x116, $GAS)
         mstore(0x118, $JUMPDEST)
-        for { let i := 0x122 } lt(i, 0x15c) { i := add(0x2) }
+        for { let i := 0x122 } lt(i, 0x15c) { i := add(i, 0x2) }
         {
           mstore(i, $PUSH)
         }
-        for { let i := 0x162 } lt(i, 0x17c) { i := add(0x2) } 
+        for { let i := 0x162 } lt(i, 0x17c) { i := add(i, 0x2) } 
         {
           mstore(i, $DUP)
         }
-        for { let i := 0x182 } lt(i, 0x19c) { i := add(0x2) } 
+        for { let i := 0x182 } lt(i, 0x19c) { i := add(i, 0x2) } 
         {
           mstore(i, $SWAP)
         }
