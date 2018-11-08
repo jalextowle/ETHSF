@@ -337,11 +337,25 @@ contract Runner {
       $JUMPDEST:
         jump(LOOP)
       $PUSH:
-
+        let num_bytes := sub(opcode, 0x5f)
+        // FIXME - Figure out if this is the right impl
+        if gt(add(num_bytes, code_ptr), code_end) {
+          revert(0x0, 0x0) 
+        }
+        let arg := mload(add(code_ptr, 0x1)) 
+        arg := div(arg, exp(2, sub(256, mul(num_bytes, 0x8))))
+        mstore(stack_ptr, arg)
+        code_ptr := add(code_ptr, num_bytes)
+        stack_ptr := safe_add(stack_ptr, 0x20, mem_ptr)
         jump(LOOP)
       $DUP:
+        let stack_number := sub(opcode, 0x7f)
+        mstore(stack_ptr, mload(safe_sub(stack_ptr, mul(0x20, stack_number), stack_start))) 
+        stack_ptr := safe_add(stack_ptr, 0x20, mem_ptr) 
         jump(LOOP)
       $SWAP:
+        stack_number := sub(opcode, 0x8f)
+        
         jump(LOOP)
       $LOG0:
         stack_ptr := safe_sub(stack_ptr, 0x40, stack_start)
